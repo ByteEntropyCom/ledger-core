@@ -8,6 +8,16 @@ Ledger-Core is a high-performance, immutable double-entry ledger implemented ent
 
 Unlike traditional applications that rely on middle-tier logic (Java/Python) to enforce financial rules, Ledger-Core moves the "Laws of Accounting" into the database schema itself. This ensures that even if a backend service has a bug, the ledger remains balanced, immutable, and audit-ready.
 
+## ✨ Why Ledger-Core?
+
+- **Logic-in-Database**: Financial rules enforced at the database level, not application layer
+- **Guaranteed Immutability**: Cryptographic-strength guarantees that records cannot be modified
+- **Real-Time Integrity**: Every transaction is verified against ground truth before commit
+- **Enterprise-Grade Auditability**: Complete transaction history preserved forever
+- **Sub-Millisecond Balance Lookups**: O(1) cached balances with O(N) auditability
+- **Distributed-Ready**: UUID v7 support for globally unique, time-ordered IDs
+
+
 ## 🛡️ The Four Pillars of Integrity
 
 ### Atomic Double-Entry Balancing: 
