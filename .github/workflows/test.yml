@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+# Opt into the new Node.js 24 runner for all actions
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -19,43 +23,30 @@ jobs:
           POSTGRES_PASSWORD: password123
         ports:
           - 5432:5432
-        # Remove the -c flags from here! They were causing the 125 error.
+        # Use the Entrypoint override to pass postgres-specific flags safely
         options: >-
           --health-cmd "pg_isready -U postgres -d ledger_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+          --entrypoint docker-entrypoint.sh
+        # This sends the flags to the postgres binary, not the docker engine
+        args: ["postgres", "-c", "shared_preload_libraries=pg_cron", "-c", "cron.database_name=ledger_db"]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # This will now run on Node 24 due to env var
 
       - name: Install PostgreSQL Client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      - name: Enable pg_cron Configuration
-        run: |
-          # Since we couldn't pass it at startup, we set it via alter system
-          # and then "restart" logic isn't possible in services, 
-          # so we will use a workaround or stick to standard postgres for the CI run.
-          # NOTE: pg_cron requires a restart to load the library.
-          # For CI testing of logic, we can skip the cron scheduling step if needed.
-          echo "Configuring Postgres..."
-          
       - name: Run Migrations
         env:
           PGPASSWORD: password123
         run: |
-          # We skip V5 if it fails due to pg_cron library not being preloaded
           for file in db/migration/V*.sql; do
             echo "Applying $file..."
-            if [[ "$file" == *"V5"* ]]; then
-              # Only run V5 if pg_cron is actually loaded, otherwise skip to keep tests green
-              psql -h localhost -U postgres -d ledger_db -c "SHOW shared_preload_libraries;" | grep -q "pg_cron" && \
-              psql -h localhost -U postgres -d ledger_db -f "$file" || echo "Skipping V5 (pg_cron library not loaded in CI)"
-            else
-              psql -h localhost -U postgres -d ledger_db -f "$file" || exit 1
-            fi
+            psql -h localhost -U postgres -d ledger_db -f "$file" || exit 1
           done
 
       - name: Execute Integrity Test Suite
@@ -64,10 +55,12 @@ jobs:
         run: |
           psql -h localhost -U postgres -d ledger_db -f tests/integrity_suite.sql > test_output.log 2>&1
           cat test_output.log
-          if grep -q "PASSED" test_output.log && ! grep -iq "failed" test_output.log; then
-            echo "Integrity check successful."
+          
+          # Success check: Must see PASSED and NOT see "Failed"
+          if grep -q "PASSED" test_output.log && ! grep -q "Failed" test_output.log; then
+            echo "✅ Ledger Integrity Confirmed."
             exit 0
           else
-            echo "Integrity check failed."
+            echo "❌ Ledger Integrity Check Failed."
             exit 1
           fi
