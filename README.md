@@ -71,16 +71,21 @@ You should see NOTICE logs confirming that the engine successfully blocked unbal
 
 ## 📂 Project Structure
 
-#### db/migration/: 
-Versioned SQL scripts defining tables, triggers, and procedures.
+ledger-core/
+├── db/
+│   └── migration/
+│       ├── V1__Initial_Schema.sql          # Core table definitions
+│       ├── V2__Integrity_Triggers.sql      # Double-entry validation & immutability
+│       ├── V3__Balance_Automation.sql      # Real-time balance sync with integrity checks
+│       ├── V4__Audit_And_Repair.sql        # Milestones, audit views, emergency repairs
+│       ├── V5__Job_Scheduling.sql          # pg_cron background jobs
+│       ├── V6__Seed_Data.sql               # Sample accounts
+│       └── V7__Reporting_Views.sql         # Financial statement views
+├── tests/
+│   └── integrity_suite.sql                 # Destructive test suite
+├── docker-compose.yml                       # PostgreSQL 18 + pg_cron setup
+└── README.md
 
-#### tests/: 
-Pure SQL test suite to verify accounting rules.
-
-#### docker-compose.yml: 
-Local infrastructure configuration.
-
-## 🛠️ Technical Deep Dive
 
 ### UUID v7 Primary Keys
 
