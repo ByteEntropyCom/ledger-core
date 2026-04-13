@@ -99,5 +99,3 @@ To ensure the system scales to millions of entries, we use a snapshot pattern.
 
 ## 📝 License
 Distributed under the MIT License. See LICENSE for more information.
-
-Built with 💡 by [Your Name] Turning Database Schemas into Sentinels of Integrity.
