@@ -1,4 +1,6 @@
 ![Build Status](https://github.com/ThePathways/ledger-core/actions/workflows/test.yml/badge.svg)
+![PostgreSQL 18+](https://img.shields.io/badge/PostgreSQL-18+-blue)
+![License: MIT](https://img.shields.io/badge/License-MIT-green)
 
 # ⚖️ Ledger-Core: Hardened SQL Accounting Engine
 
