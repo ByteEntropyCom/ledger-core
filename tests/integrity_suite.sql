@@ -54,5 +54,25 @@ BEGIN
         RAISE NOTICE 'Test 4 (Sync Failure): Caught expected discrepancy.';
     END;
 
+    -- CASE 5: REPORTING LAYER VERIFICATION (Testing V7)
+    BEGIN
+        -- Check if our 'Cash' account net balance matches the $100 we inserted in Case 1
+        IF EXISTS (
+            SELECT 1 FROM vw_trial_balance 
+            WHERE account_name = 'Cash' AND net_balance = 100.00
+        ) THEN
+            RAISE NOTICE 'Test 5 (Reporting View): PASSED';
+        ELSE
+            RAISE EXCEPTION 'Reporting View showed incorrect balance!';
+        END IF;
+
+        -- Check the Global Health Monitor
+        IF (SELECT discrepancy FROM vw_ledger_health) = 0 THEN
+            RAISE NOTICE 'Test 6 (Ledger Health): PASSED (Discrepancy is 0.00)';
+        ELSE
+            RAISE EXCEPTION 'Ledger Health Check failed!';
+        END IF;
+    END;
+
     RAISE NOTICE '--- ALL TESTS COMPLETE ---';
 END $$;
