@@ -7,6 +7,7 @@
 -- Chart of Accounts
 CREATE TABLE accounts (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
+    code VARCHAR(20) NOT NULL UNIQUE,
     name TEXT NOT NULL UNIQUE,
     type TEXT NOT NULL CHECK (type IN ('asset', 'liability', 'equity', 'revenue', 'expense')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
