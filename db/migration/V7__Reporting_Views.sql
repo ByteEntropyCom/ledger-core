@@ -7,8 +7,8 @@ WITH account_sums AS (
     -- Using the 'entries' table as the Ground Truth
     SELECT 
         account_id,
-        SUM(CASE WHEN type = 'DEBIT' THEN amount ELSE 0 END) as total_debit,
-        SUM(CASE WHEN type = 'CREDIT' THEN amount ELSE 0 END) as total_credit
+        SUM(CASE WHEN direction = 'DEBIT' THEN amount ELSE 0 END) as total_debit,
+        SUM(CASE WHEN direction = 'CREDIT' THEN amount ELSE 0 END) as total_credit
     FROM entries
     GROUP BY account_id
 )
