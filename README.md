@@ -81,6 +81,76 @@ psql -h localhost -U admin -d ledger_db -f tests/integrity_suite.sql
 
 You should see NOTICE logs confirming that the engine successfully blocked unbalanced entries and unauthorized deletions.
 
+## Ledger Architecture Diagram
+
+```mermaid
+erDiagram
+    %% Entities
+    ACCOUNTS ||--o{ ENTRIES : "tracked in"
+    TRANSACTIONS ||--|{ ENTRIES : "composed of"
+    ACCOUNTS ||--|| ACCOUNT_BALANCES : "cached as"
+    ACCOUNTS ||--|| ACCOUNT_MILESTONES : "checkpointed at"
+
+    %% Table Structures
+    ACCOUNTS {
+        uuid id PK
+        varchar code
+        text type
+    }
+
+    TRANSACTIONS {
+        uuid id PK
+        text description
+        timestamptz posted_at
+    }
+
+    ENTRIES {
+        uuid id PK
+        uuid transaction_id FK
+        uuid account_id FK
+        numeric amount
+        text direction
+    }
+
+    ACCOUNT_BALANCES {
+        uuid account_id PK, FK
+        numeric total_debit
+        numeric total_credit
+        numeric current_balance "GENERATED"
+    }
+
+    ACCOUNT_MILESTONES {
+        uuid account_id PK, FK
+        uuid milestone_entry_id
+        numeric verified_balance
+    }
+
+    %% Logic and Guarding Flow
+    subgraph Integrity_Layer [Data Guarding]
+        fn_enforce_double_entry {{Trigger: Double Entry Check}}
+        fn_block_modifications {{Trigger: Immutability Guard}}
+        fn_sync_account_balance {{Trigger: Balance Sentinel}}
+    end
+
+    subgraph Automation [Maintenance]
+        pg_cron [[pg_cron Scheduler]]
+        pr_create_account_milestones [[Milestone Procedure]]
+    end
+
+    %% Flow Connections
+    ENTRIES -.-> fn_enforce_double_entry : "Validates Sums"
+    ENTRIES -.-> fn_block_modifications : "Prevents Update/Delete"
+    ENTRIES -.-> fn_sync_account_balance : "Updates Cache"
+    
+    fn_sync_account_balance -.-> ACCOUNT_BALANCES : "Increments"
+    fn_sync_account_balance -.-> ACCOUNT_MILESTONES : "Verifies against Delta"
+    
+    pg_cron --> pr_create_account_milestones : "Every 10 Mins"
+    pr_create_account_milestones --> ACCOUNT_MILESTONES : "Advances Checkpoint"
+```
+
+
+
 ## 📂 Project Structure
 
 ````
